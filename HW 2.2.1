@@ -1,0 +1,43 @@
+//To complete problem 2.2.1, run the function MakeSlope(xValuesWave, yValuesWave)
+Function MakeSlope(wWave1, wWave2)		//Beginning of Function
+	wave wWave1, wWave2		//Declaration of Parameters
+	make/O/N=(numpnts(wWave1)) wM, wResidualsSquared		//Creation of waves with the same number of points as the original line
+	variable m, Resolution, SlopeMin, SlopeMax, iSlopeTester, iSlopeAssigner, iSlopeSelector, TempValue, iGoogleEquation, GoogleSlope		//Creation of variables, including all of the iterators
+	Resolution= 100		//Resolution, the number of possible slopes that will be tested
+	make/O/N=(Resolution) wChiSquared, wSlopeTester, wSlopeChoices		//Creation of waves that have as many dimensions as slope options
+	wM = wWave2/wWave1		//Calculation of slopes for each point in the original line assuming intercept of 0
+	SlopeMin= wavemin(wM)		//Finding lowest possible slope
+	SlopeMax= wavemax(wM)		//Finding highest possible slope
+	for (iSlopeAssigner=0; iSlopeAssigner<Resolution; iSlopeAssigner+=1)		//Beginning of for loop for finding all slope options
+		wSlopeChoices[iSlopeAssigner]=SlopeMin + (SlopeMax-SlopeMin)*iSlopeAssigner/(Resolution-1)		//Finding slope options between the lowest and highest slopes, that number the same as resolution
+	endfor		//End for loop
+	for (iSlopeTester=0; iSlopeTester<Resolution; iSlopeTester+=1)		//Beginning of for loop to calculate chi squared values for each slope option
+		wResidualsSquared*=0		//Resets residual squared wave for the next slope option
+		wResidualsSquared=(wwave2-(wwave1*wSlopeChoices[iSlopeTester]))^2		//Calculates the residuals squared values for each slope option
+		wChiSquared[iSlopeTester]=sqrt(sum(wResidualsSquared))		//Sums, takes the square root, and adds the chi values to the appropriate wave
+	endfor		//End for loop
+	for (iSlopeSelector=0; iSlopeSelector<Resolution; iSlopeSelector+=1)		//Beginning of for loop to find the lowest chi value
+		if (wChiSquared[iSlopeSelector]==wavemin(wChiSquared))		//If statement that finds the lowest value
+			TempValue=iSlopeSelector		//assigns the index for the lowest chi value to a variable
+		endif		//End of if Statement
+	endfor		//End for loop
+	m = wSlopeChoices[TempValue]		//Using the index for the lowest chi value, the brute force slope is found
+	make/O/N=(numpnts(wWave1)) wBruteForce, wCurveFit, wGoogleEquationNumerator, wGoogleEquationDenominator, wGoogleEquation		//Creation of more waves for plotting purposes
+	wBruteForce=wWave1*m		//makes y-values wave for brute force calculation
+	wCurveFit=wWave1*1.9671		//makes y-values for curve fit calculation
+	for (iGoogleEquation=0; iGoogleEquation<numpnts(wWave1); iGoogleEquation+=1)		//beginning of loop for equation from google
+		wGoogleEquationNumerator=(wWave1[iGoogleEquation]-Mean(wWave1))*(wWave2[iGoogleEquation]-Mean(wWave2))		//wave for google equation numerator
+		wGoogleEquationDenominator=(wWave1[iGoogleEquation]-Mean(wWave1))^2		//wave for google equation numerator
+	endfor		//End for loop
+	GoogleSlope=sum(wGoogleEquationNumerator)/sum(wGoogleEquationDenominator)		//Calculation of slope value from google equation
+	wGoogleEquation=wWave1*GoogleSlope		//y-values for google equation calculation
+	Display wWave2 vs wWave1		//Following lines are for the set up of the graph
+	AppendtoGraph wBruteForce vs wWave1
+	AppendtoGraph wCurveFit vs wWave1
+	CurveFit line wwave2 /X=wwave1 /D 
+	AppendtoGraph wGoogleEquation vs wWave1
+	SetAxis bottom 0,*
+	SetAxis left 0,*	
+	Legend/C/N=text0/J "\\s(wave1) Original Data\r\\s(wBruteForce) Brute Force Standard Least Squares\r\\s(wGoogleEquation) Equation from Google\r\\s(fit_wave1) Curve Fitting\r\\s(wCurveFit) Quick Fit"
+	•ModifyGraph rgb(wBruteForce)=(0,0,0)
+End		//End of function
