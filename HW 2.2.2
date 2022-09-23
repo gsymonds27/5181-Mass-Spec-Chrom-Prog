@@ -1,0 +1,45 @@
+//To solve 2.2.2, run the function MakeSlopeRobust(InputXValues, InputYValues)
+
+Function MakeSlopeRobust(wWave1, wWave2)		//Beginning of function
+	wave wWave1, wWave2		//Declaration of parameters
+	variable Cutoff, iGroupSorter, iSlopes, Slope		//Assigning of variables
+	if (numpnts(wWave1)/2==trunc(numpnts(wWave1)/2))		//Beginning of if statement to see if number of points is even or odd, here it is the case if even
+		Cutoff=(numpnts(wWave1)/2-1)		//Cutoff variable is assigned to divide the points into two groups
+		make/O/N=(Cutoff+1) wFirstGroupx, wFirstGroupy, wSecondGroupx, wSecondGroupy		//Waves are made based on the cutoff value
+		for (iGroupSorter=0; iGroupSorter<numpnts(wWave1); iGroupSorter+=1)		//Beginning of for loop to sort the points into groups
+			if (iGroupSorter<=Cutoff)		//Assignment of the first group
+				wFirstGroupx[iGroupSorter]=wWave1[iGroupSorter]		//Assignment of the x-values in the first group
+				wFirstGroupy[iGroupSorter]=wWave2[iGroupSorter]		//Assignment of the y-values in the first group
+			else		//Assignment of the second group
+				wFirstGroupx[iGroupSorter]=wWave1[iGroupSorter]		//Assignment of the x-values in the second group
+				wFirstGroupy[iGroupSorter]=wWave2[iGroupSorter]		//Assignment of the y-values in the second group
+			endif		//End of if statement
+		endfor		//End of for loop
+	else		//Same process for even number of points, except the middle point in this odd number of points is disregarded
+		Cutoff=((numpnts(wWave1)-1)/2-1)
+		make/O/N=(Cutoff+1) wFirstGroupx, wFirstGroupy, wSecondGroupx, wSecondGroupy
+		for (iGroupSorter=0; iGroupSorter<numpnts(wWave1); iGroupSorter+=1)
+			if (iGroupSorter<=Cutoff)
+				wFirstGroupx[iGroupSorter]=wWave1[iGroupSorter]
+				wFirstGroupy[iGroupSorter]=wWave2[iGroupSorter]
+			elseif (iGroupSorter>Cutoff+1)
+				wFirstGroupx[iGroupSorter]=wWave1[iGroupSorter]
+				wFirstGroupy[iGroupSorter]=wWave2[iGroupSorter]
+			endif
+		endfor
+	endif 
+	make/O/N=(numpnts(wFirstGroupx)) wSlopeChoices		//Creation of wave for the number of slope choices
+	for (iSlopes=0; iSlopes<numpnts(wFirstGroupx); iSlopes+=1)		//Beginning of for loop to calculate slope choices
+		wSlopeChoices[iSlopes]=(wSecondGroupy[iSlopes]-wFirstGroupy[iSlopes])/(wSecondGroupx[iSlopes]-wFirstGroupx[iSlopes])		//Calculation of the slope choices based on the four groups
+	endfor		//End of the for loop
+	Slope=Median(wSlopeChoices)		//Assignment of the slope through finding the median of the slope choices
+	make/O/N=(numpnts(wWave1)) wRobustSlope		//Creation of a wave for the y-values for the obtained slope
+	wRobustSlope=wWave1*Slope		//Assignment of the y-values wave
+	Display wWave2 vs wWave1		//This and the rest of the code are for the plotting of the relevant curves
+	AppendtoGraph wRobustSlope vs wWave1
+	SetAxis bottom 0,*
+	SetAxis left 0,*	
+	Legend/C/N=text0/J "\\s(wave1) Original Data\r\\s(wRobustSlope) Robust Technique\r"
+	•ModifyGraph rgb(wRobustSlope)=(0,0,0)
+
+End
